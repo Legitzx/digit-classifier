@@ -1,5 +1,16 @@
 import numpy as np
 
+"""
+Simple Neural Network class.
+
+Base steps the neural network takes to learn:
+1. Forward pass
+2. Calculate cost
+3. Backwards propagation
+4. Gradient Descent
+5. Repeat steps 1-4 until cost function is at a minimum
+"""
+
 
 class NeuralNetwork:
     """
@@ -26,6 +37,7 @@ class NeuralNetwork:
     """
     a is the input
     """
+
     def feed_forward(self, a):
         """
          - weights matrix, where each row in weights[i] are all the weights connected to a singular neuron.
@@ -38,6 +50,14 @@ class NeuralNetwork:
         return a
 
     def backpropagation(self, input_layer_data, desired_output):
+        """
+        Basic idea of back propagation:
+        Do a forward pass and store the z's (z=wx+b) and a's (sigmoid function s(z)) of each neuron in the various layers.
+        Then we start the backwards pass. The goal of the backward pass is to get the partial derivative of the cost function
+        with respect to each individual weight and bias in the network. Once we have these partial derivatives, we can start
+        gradient descent. This allows us to analyze how much each weight and bias contributes to the cost function.
+        """
+
         weightGrad = [np.zeros(w.shape) for w in self.weights]
         biasesGrad = [np.zeros(b.shape) for b in self.biases]
 
@@ -72,7 +92,7 @@ class NeuralNetwork:
         # starts at second-to-last layer (index = -2)
         for l in range(2, self.num_layers):
             # BASE: bias gradients of previous neurons * the previous weights * sigmoid_deriv of current neuron (with current z)
-            z = zs[-l] # get the z of current layer, this is a column vector where each row is a z for each neuron
+            z = zs[-l]  # get the z of current layer, this is a column vector where each row is a z for each neuron
 
             prevWeights = self.weights[-l + 1]
 
@@ -89,6 +109,11 @@ class NeuralNetwork:
         return weightGrad, biasesGrad
 
     def gradient_descent(self, training_data, desired_output):
+        """
+        The goal of gradient descent is to analyze the gradients and tune each weight and bias to reduce the
+        cost. We do this by tuning each w = w - learning_rate*dC/dw (derivative of cost with respect to weight) and the same with
+        bias.
+        """
         learning_rate = 0.01
 
         while True:
@@ -96,7 +121,7 @@ class NeuralNetwork:
 
             outputCost = cost(output, desired_output)
 
-            #print("Cost: ", outputCost)
+            # print("Cost: ", outputCost)
 
             if outputCost < 0.0001:
                 print("Training finished.")
@@ -123,12 +148,3 @@ def sigmoid(z):
 
 def sigmoid_derivative(z):
     return np.exp(-z) * sigmoid(z) * sigmoid(z)
-
-"""
-Neural Network Steps:
- 1. Forward pass
- 2. Compute cost function
- 3. Backwards propagation
- 4. GD
- 5. REPEAT UNTIL COST FUNCTION IS NOT AT A MINIMUM
-"""

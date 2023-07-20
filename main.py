@@ -8,7 +8,7 @@ def test():
 
     y_desired = np.array([1])
 
-    nn = NeuralNetwork([3, 200, 1000, 250, 1])
+    nn = NeuralNetwork([3, 20, 20, 1])
 
     print("Before training: ")
     print(nn.feed_forward(input))
