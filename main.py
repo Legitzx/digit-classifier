@@ -1,22 +1,16 @@
 from engine import *
-
+from mnist_loader import *
 
 def test():
-    input = np.array([[-1],
-                      [2.1],
-                      [0.4]])
+    X_train, Y_train, X_test, Y_test = get_mnist_data() # , X_test, Y_test
 
-    y_desired = np.array([1])
+    nn = NeuralNetwork([784, 100, 100, 10])
 
-    nn = NeuralNetwork([3, 20, 20, 1])
+    # Train on training data
+    nn.stochastic_gradient_descent(35, X_train, Y_train)
 
-    print("Before training: ")
-    print(nn.feed_forward(input))
-
-    nn.gradient_descent(input, y_desired)
-
-    print("After training: ")
-    print(nn.feed_forward(input))
+    # Evaluate on test data
+    nn.evaluate(X_test, Y_test)
 
 
 if __name__ == '__main__':

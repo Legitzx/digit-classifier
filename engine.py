@@ -108,31 +108,45 @@ class NeuralNetwork:
 
         return weightGrad, biasesGrad
 
-    def gradient_descent(self, training_data, desired_output):
+    def stochastic_gradient_descent(self, epochs, inputs, desired_outputs):
         """
         The goal of gradient descent is to analyze the gradients and tune each weight and bias to reduce the
         cost. We do this by tuning each w = w - learning_rate*dC/dw (derivative of cost with respect to weight) and the same with
         bias.
         """
-        learning_rate = 0.01
+        learning_rate = 0.1
 
-        while True:
-            output = self.feed_forward(training_data)
+        for epoch in range(epochs):
+            # Each epoch goes through the entire training set
+            numTrainingCorrect = 0
+            for input, desired_output in zip(inputs, desired_outputs):
+                calculatedOutput = self.feed_forward(input)
+                #outputCost = cost(calculatedOutput, desired_output)
 
-            outputCost = cost(output, desired_output)
+                if np.argmax(calculatedOutput) == np.argmax(desired_output): # argmax finds the largest element and returns its index
+                    numTrainingCorrect += 1
 
-            # print("Cost: ", outputCost)
+                weightGrad, biasesGrad = self.backpropagation(input, desired_output)
 
-            if outputCost < 0.0001:
-                print("Training finished.")
-                break
+                for layer in range(1, len(weightGrad)):
+                    self.weights[layer] = self.weights[layer] - learning_rate * weightGrad[layer]
+                    self.biases[layer] = self.biases[layer] - learning_rate * biasesGrad[layer]
 
-            weightGrad, biasesGrad = self.backpropagation(training_data, desired_output)
+            print("Epoch #{} {}/60000 {:.1f}".format(epoch, numTrainingCorrect, (numTrainingCorrect / 60000.0) * 100.0))
 
-            for layer in range(1, len(weightGrad)):
-                self.weights[layer] = self.weights[layer] - learning_rate * weightGrad[layer]
-                self.biases[layer] = self.biases[layer] - learning_rate * biasesGrad[layer]
+    def evaluate(self, test_data_input, test_data_desired_output):
+        """
+        Used to pass in test input/output after model has been trained.
+        """
+        numTrainingCorrect = 0
 
+        for input, desired_output in zip(test_data_input, test_data_desired_output):
+            calculatedOutput = self.feed_forward(input)
+
+            if np.argmax(calculatedOutput) == np.argmax(desired_output):
+                numTrainingCorrect += 1
+
+        print("{}/10000 {:.1f}".format(numTrainingCorrect, (numTrainingCorrect / 10000.0) * 100.0))
 
 def cost(output, desired):
     return 0.5 * (output - desired) ** 2
