@@ -132,7 +132,7 @@ class NeuralNetwork:
                     self.weights[layer] = self.weights[layer] - learning_rate * weightGrad[layer]
                     self.biases[layer] = self.biases[layer] - learning_rate * biasesGrad[layer]
 
-            print("Epoch #{} {}/60000 {:.1f}".format(epoch, numTrainingCorrect, (numTrainingCorrect / 60000.0) * 100.0))
+            print("Epoch #{} {}/{} {:.1f}% Accuracy".format(epoch, numTrainingCorrect, len(inputs), (numTrainingCorrect / float(len(inputs))) * 100.0))
 
     def evaluate(self, test_data_input, test_data_desired_output):
         """
@@ -146,7 +146,7 @@ class NeuralNetwork:
             if np.argmax(calculatedOutput) == np.argmax(desired_output):
                 numTrainingCorrect += 1
 
-        print("{}/10000 {:.1f}".format(numTrainingCorrect, (numTrainingCorrect / 10000.0) * 100.0))
+        print("{}/{} {:.1f}% Accuracy".format(numTrainingCorrect, len(test_data_input), (numTrainingCorrect / float(len(test_data_input))) * 100.0))
 
 def cost(output, desired):
     return 0.5 * (output - desired) ** 2
