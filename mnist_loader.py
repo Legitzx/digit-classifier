@@ -35,7 +35,7 @@ def save_mnist():
     print("Save complete.")
 
 def init():
-    #download_mnist()
+    download_mnist()
     save_mnist()
 
 def load():
@@ -46,13 +46,13 @@ def load():
     return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
 
 def get_mnist_data():
-  X_train, y_train, x_test, y_yest = load()
+  X_train, y_train, x_test, y_test = load()
 
   trainingInput = [x.reshape(-1, 1) for x in X_train]
   trainingOutput = [vectorized_result(y) for y in y_train]
 
   testingInput = [x.reshape(-1, 1) for x in x_test]
-  testingOutput = [vectorized_result(y) for y in y_yest]
+  testingOutput = [vectorized_result(y) for y in y_test]
 
   return trainingInput, trainingOutput, testingInput, testingOutput
 
