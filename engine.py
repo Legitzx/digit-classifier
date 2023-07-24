@@ -32,7 +32,7 @@ class NeuralNetwork:
         # x represents the number of neurons in columns (L-1) and y represents
         # the number of neurons in column (L).
         # Each row is the weights for a particular neuron in the layer
-        self.weights = [np.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.weights = [np.random.randn(y, x)/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
 
     """
     a is the input
