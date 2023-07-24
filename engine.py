@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 """
 Simple Neural Network class.
@@ -32,7 +33,7 @@ class NeuralNetwork:
         # x represents the number of neurons in columns (L-1) and y represents
         # the number of neurons in column (L).
         # Each row is the weights for a particular neuron in the layer
-        self.weights = [np.random.randn(y, x)/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.weights = [np.random.randn(y, x) / np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
 
     """
     a is the input
@@ -108,45 +109,61 @@ class NeuralNetwork:
 
         return weightGrad, biasesGrad
 
-    def stochastic_gradient_descent(self, epochs, inputs, desired_outputs):
+    def mini_batch_gradient_descent(self, inputs, desired_outputs, epochs, mini_batch_size, test_inputs=None,
+                                    test_outputs=None):
         """
         The goal of gradient descent is to analyze the gradients and tune each weight and bias to reduce the
         cost. We do this by tuning each w = w - learning_rate*dC/dw (derivative of cost with respect to weight) and the same with
-        bias.
+        bias. Here, we use mini-batch gradient descent. Mini-batch gradient descent processes x training examples per batch. In one
+        epoch, we go through len(inputs)/x batches. During one batch, we add up the gradients from each training example
+        and take the average (we only update the weights/biases after each batch, using the averaged gradients).
         """
-        learning_rate = 0.1
+        learning_rate = 0.01  # 0.01 - 95%
+
+        training_data = [(i, o) for i, o in zip(inputs, desired_outputs)]
 
         for epoch in range(epochs):
-            # Each epoch goes through the entire training set
-            numTrainingCorrect = 0
-            for input, desired_output in zip(inputs, desired_outputs):
-                calculatedOutput = self.feed_forward(input)
-                #outputCost = cost(calculatedOutput, desired_output)
+            random.shuffle(training_data)
 
-                if np.argmax(calculatedOutput) == np.argmax(desired_output): # argmax finds the largest element and returns its index
-                    numTrainingCorrect += 1
+            """
+            Within each epoch, we go through the entire training set. We now divide the training set into mini_batches.
+            """
 
-                weightGrad, biasesGrad = self.backpropagation(input, desired_output)
+            for start_index in range(0, len(inputs), mini_batch_size):
+                batch_training_data = training_data[start_index:start_index + mini_batch_size]
 
-                for layer in range(1, len(weightGrad)):
-                    self.weights[layer] = self.weights[layer] - learning_rate * weightGrad[layer]
-                    self.biases[layer] = self.biases[layer] - learning_rate * biasesGrad[layer]
+                weightGrad = [np.zeros(w.shape) for w in self.weights]
+                biasesGrad = [np.zeros(b.shape) for b in self.biases]
 
-            print("Epoch #{} {}/{} {:.1f}% Accuracy".format(epoch, numTrainingCorrect, len(inputs), (numTrainingCorrect / float(len(inputs))) * 100.0))
+                for training_input, desired_output in batch_training_data:
+                    curWeightGrad, curBiasGrad = self.backpropagation(training_input, desired_output)
+
+                    weightGrad = [old + new for old, new in zip(weightGrad, curWeightGrad)]
+                    biasesGrad = [old + new for old, new in zip(biasesGrad, curBiasGrad)]
+
+                self.weights = [w - (learning_rate / len(batch_training_data)) * partial
+                                for w, partial in zip(self.weights, weightGrad)]
+
+                self.biases = [b - (learning_rate / len(batch_training_data)) * partial
+                               for b, partial in zip(self.biases, biasesGrad)]
+
+            self.evaluate(test_inputs, test_outputs)
 
     def evaluate(self, test_data_input, test_data_desired_output):
         """
         Used to pass in test input/output after model has been trained.
         """
-        numTrainingCorrect = 0
+        numCorrect = 0
 
         for input, desired_output in zip(test_data_input, test_data_desired_output):
             calculatedOutput = self.feed_forward(input)
 
             if np.argmax(calculatedOutput) == np.argmax(desired_output):
-                numTrainingCorrect += 1
+                numCorrect += 1
 
-        print("{}/{} {:.1f}% Accuracy".format(numTrainingCorrect, len(test_data_input), (numTrainingCorrect / float(len(test_data_input))) * 100.0))
+        print("{}/{} {:.1f}% Accuracy".format(numCorrect, len(test_data_input),
+                                              (numCorrect / float(len(test_data_input))) * 100.0))
+
 
 def cost(output, desired):
     return 0.5 * (output - desired) ** 2
@@ -161,4 +178,4 @@ def sigmoid(z):
 
 
 def sigmoid_derivative(z):
-    return sigmoid(z)*(1-sigmoid(z))
+    return sigmoid(z) * (1 - sigmoid(z))
