@@ -161,4 +161,4 @@ def sigmoid(z):
 
 
 def sigmoid_derivative(z):
-    return np.exp(-z) * sigmoid(z) * sigmoid(z)
+    return sigmoid(z)*(1-sigmoid(z))
