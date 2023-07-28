@@ -20,7 +20,11 @@ class NeuralNetwork:
     the second layer containing 3 neurons, and so on.
     """
 
-    def __init__(self, sizes):
+    def __init__(self, sizes, regularization_lambda_param, starting_learning_rate, learning_rate_decay):
+        self.starting_learning_rate = starting_learning_rate
+        self.learning_rate_decay = learning_rate_decay
+        self.regularization_lambda_param = regularization_lambda_param
+
         self.sizes = sizes
 
         self.num_layers = len(sizes)
@@ -45,8 +49,11 @@ class NeuralNetwork:
          - a, which is initially the input layer, is a column vector of inputs (or activations).
          - after the dot product and addition, the resulting matrix shape represents that of the input (or activation) matrix.
         """
-        for w, b in zip(self.weights, self.biases):
+        for w, b in zip(self.weights[:-1], self.biases[:-1]):
             a = sigmoid(np.dot(w, a) + b)
+
+        z = np.dot(self.weights[-1], a) + self.biases[-1]
+        a = softmax(z)
 
         return a
 
@@ -70,13 +77,17 @@ class NeuralNetwork:
         activations = [input_layer_data]
         zs = []
 
-        for w, b in zip(self.weights, self.biases):
+        for w, b in zip(self.weights[:-1], self.biases[:-1]):
             z = np.dot(w, activation) + b
 
             zs.append(z)
 
             activation = sigmoid(z)
             activations.append(activation)
+
+        z = np.dot(self.weights[-1], activation) + self.biases[-1]
+        zs.append(z)
+        activations.append(softmax(z))
 
         """
         Backward pass
@@ -86,7 +97,8 @@ class NeuralNetwork:
         # for w: cost function derivative * sigmoid_deriv * previousLayerActivation
         # for b: cost function derivative * sigmoid_deriv * 1
 
-        basePartial = cost_derivative(activations[-1], desired_output) * sigmoid_derivative(zs[-1])
+        # softmax & cross entropy in last layer
+        basePartial = cost_delta_output_layer(activations[-1], desired_output)
         weightGrad[-1] = np.dot(basePartial, activations[-2].transpose())
         biasesGrad[-1] = basePartial
 
@@ -118,7 +130,7 @@ class NeuralNetwork:
         epoch, we go through len(inputs)/x batches. During one batch, we add up the gradients from each training example
         and take the average (we only update the weights/biases after each batch, using the averaged gradients).
         """
-        learning_rate = 0.01  # 0.01 - 95%
+        learning_rate = self.starting_learning_rate
 
         training_data = [(i, o) for i, o in zip(inputs, desired_outputs)]
 
@@ -141,13 +153,17 @@ class NeuralNetwork:
                     weightGrad = [old + new for old, new in zip(weightGrad, curWeightGrad)]
                     biasesGrad = [old + new for old, new in zip(biasesGrad, curBiasGrad)]
 
-                self.weights = [w - (learning_rate / len(batch_training_data)) * partial
+                self.weights = [w - (learning_rate / len(batch_training_data)) * (partial + (self.regularization_lambda_param * w))
                                 for w, partial in zip(self.weights, weightGrad)]
 
-                self.biases = [b - (learning_rate / len(batch_training_data)) * partial
+                self.biases = [b - (learning_rate / len(batch_training_data)) * (partial + (self.regularization_lambda_param * b))
                                for b, partial in zip(self.biases, biasesGrad)]
 
             self.evaluate(test_inputs, test_outputs)
+            self.evaluate(inputs, desired_outputs)
+
+            # decaying learning rate
+            learning_rate = self.starting_learning_rate * (1.0 / (1 + self.learning_rate_decay * epoch))
 
     def evaluate(self, test_data_input, test_data_desired_output):
         """
@@ -165,11 +181,18 @@ class NeuralNetwork:
                                               (numCorrect / float(len(test_data_input))) * 100.0))
 
 
-def cost(output, desired):
-    return 0.5 * (output - desired) ** 2
+def categorical_cross_entropy_cost(output, desired):
+    # Avoid numerical instability by clipping the output values to a small positive value
+    output = np.clip(output, 1e-10, 1 - 1e-10)
+
+    # Calculate the categorical cross-entropy cost
+    cost = -np.sum(desired * np.log(output))
+
+    return cost
 
 
-def cost_derivative(output, desired):
+def cost_delta_output_layer(output, desired):
+    # Chain rule for softmax & cross entropy simplifies to this nice form - ref: https://www.youtube.com/watch?v=rf4WF-5y8uY
     return output - desired
 
 
@@ -179,3 +202,10 @@ def sigmoid(z):
 
 def sigmoid_derivative(z):
     return sigmoid(z) * (1 - sigmoid(z))
+
+
+def softmax(output):
+    # subtract the largest element to reduce possible overflow error, does not alter probability distribution
+    exp_values = np.exp(output - np.max(output))
+
+    return exp_values / np.sum(exp_values)
