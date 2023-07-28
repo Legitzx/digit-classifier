@@ -1,6 +1,6 @@
 # Digit Classifier Neural Network
 
-### Simple neural network that classifies digits using the MNIST dataset. 
+### Simple neural network built using just Python and NumPy that classifies digits using the MNIST dataset. 
 
 ### Best accuracy on test set to date: 96.7%
 
